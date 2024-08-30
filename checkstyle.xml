@@ -10,7 +10,7 @@
     <property name="localeCountry" value=""/>
 
     <module name="SuppressionFilter">
-        <property name="file" value="C:/Users/Emumba/Downloads/Extreme_Networks/xcloud-ws-collaboration-be/config/checkstyle/suppressions.xml"/>
+        <property name="file" value="${checkstyle.suppressions.file}"/>
     </module>
     <!--Add more checks from google style guide:-->
     <!--https://github.com/checkstyle/checkstyle/blob/master/src/main/resources/google_checks.xml-->
