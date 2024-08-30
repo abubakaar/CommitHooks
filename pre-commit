@@ -1,0 +1,56 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use File::Spec;
+
+# Get paths from Git configuration
+my $check_file = `git config --get checkstyle.checkfile`;
+my $checkstyle_jar = `git config --get checkstyle.jar`;
+my $java_command = `git config --get java.command`;
+
+# Check if necessary configuration is provided
+unless ($check_file && $checkstyle_jar) {
+    die "You must configure Checkstyle in your git config:\n"
+        . "\tcheckstyle.checkfile - path to your Checkstyle XML file\n"
+        . "\tcheckstyle.jar - path to your Checkstyle JAR file\n"
+        . "\tjava.command - path to your Java executable (optional)\n";
+}
+
+# Use default Java command if not specified
+$java_command ||= 'java';
+
+# Trim trailing whitespace
+chomp($check_file);
+chomp($checkstyle_jar);
+chomp($java_command);
+
+# Fetch staged files
+my $diff_command = "git diff --cached --name-only";
+open my $files_handle, '-|', $diff_command or die "Cannot run '$diff_command': $!";
+
+my @java_files;
+while (my $file = <$files_handle>) {
+    chomp $file;
+    if ($file =~ /\.java$/) {
+        push @java_files, $file;
+    }
+}
+
+# No Java files staged
+unless (@java_files) {
+    exit 0;  # No need to run Checkstyle if there are no Java files
+}
+
+# Construct the Checkstyle command
+my $checkstyle_command = "$java_command -jar $checkstyle_jar -c $check_file " . join(' ', @java_files);
+
+# Run Checkstyle
+print "Running Checkstyle on staged files:\n";
+print join("\n", @java_files), "\n";
+
+if (system($checkstyle_command) != 0) {
+    print STDERR "Commit aborted due to Checkstyle errors.\n";
+    exit 1;
+}
+
+exit 0;
